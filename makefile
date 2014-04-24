@@ -5,19 +5,19 @@ BIN_PATH=bin
 
 all:
 	mkdir -p $(BIN_PATH)
-	$(COMPILER) Cliente/src/Cliente.c -o $(BIN_PATH)/Cliente
-	$(COMPILER) Servidor/src/Server.c -o $(BIN_PATH)/Server
+	$(COMPILER) Cliente/src/Cliente.h Cliente/src/Cliente.c -o $(BIN_PATH)/Cliente
+	$(COMPILER) Servidor/src/Server.h Servidor/src/Server.c -o $(BIN_PATH)/Server
 
 clean:
 	rm -rf bin
 
 cliente:
 	mkdir -p $(BIN_PATH)
-	$(COMPILER) Cliente/src/Cliente.c -o $(BIN_PATH)/Cliente
+	$(COMPILER) Cliente/src/Cliente.h Cliente/src/Cliente.c -o $(BIN_PATH)/Cliente
 
 server:
 	mkdir -p $(BIN_PATH)
-	$(COMPILER) Servidor/src/Server.c -o $(BIN_PATH)/Server
+	$(COMPILER) Servidor/src/Server.h Servidor/src/Server.c -o $(BIN_PATH)/Server
 
 
 # Contemplamos algunos Alias para subsanar posibles diferencias de escritura

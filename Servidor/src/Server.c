@@ -82,30 +82,18 @@ int main(){
 	/*
 	 * 	Ya estamos listos para recibir paquetes de nuestro cliente...
 	 *
-	 * 	Vamos a ESPERAR (ergo, funcion bloqueante) que nos manden los paquetes, y luego imprimiremos la suma de los operandos por pantalla.
+	 * 	Vamos a ESPERAR (ergo, funcion bloqueante) que nos manden los paquetes, y luego imprimiremos el mensaje por pantalla.
 	 *
-	 *	Cuando el cliente cierra la conexion, recv() devolvera 0.
+	 *	Cuando el cliente cierra la conexion, recieve_and_deserialize() devolvera 0.
 	 */
-	t_Package operandos;
-	int packageSize = sizeof(operandos.Operando1) + sizeof(operandos.Operando2);
-	char *package = malloc(packageSize);
-	uint32_t suma;
-
+	t_Package package;
 	int status = 1;		// Estructura que manjea el status de los recieve.
 
-	while (status != 0){
-		status = recv(socketCliente, (void*) package, packageSize, 0);
-		deserializarOperandos(&(operandos), &(package));		// Ver: ¿Por que deserializar? En el comentario de la definicion de la funcion.
-		suma = operandos.Operando1 + operandos.Operando2;
-		if (status != 0) printf("%d\n", suma);
-
+	while (status){
+		status = recieve_and_deserialize(&package, socketCliente);					// Ver el "Deserializando estructuras dinamicas" en el comentario de la funcion.
+		if (status) printf("%s says: %s", package.username, package.message);
 	}
 
-	/*	NUNCA nos olvidamos de liberar la memoria que pedimos.
-	 *
-	 *  Acordate que por cada free() que no hacemos, valgrind mata a un gatito.
-	 */
-	free(package);
 
 	/*
 	 * 	Terminado el intercambio de paquetes, cerramos todas las conexiones y nos vamos a mirar Game of Thrones, que seguro nos vamos a divertir mas...
@@ -124,29 +112,44 @@ int main(){
 
 
 /*
- * 	¿Por que deserializar?
- * 	(leer primero: ¿Por que serializar? en el proceso cliente)
+ * 	Deserializando estructuras dinamicas
+ * 	(leer previamente ¿Por que serializacion dinamica? en el comentario de la serializacion)
  *
- * 	De forma inversa a la serializacion, los datos deben ser reconstruidos en el receptor, para que este pueda trabajar con ellos.
- * 	Cabe destacar que no necesariamente el formato de los datos enviados es el mismo en el emisor que en el receptor. Por ejemplo,
- * 	el caso mas representativo es la diferencia en el tipo de almacenamiento de datos en memoria que estos usen. Si uno utiliza
- * 	Big Endian, y otro Little Endian, al realizar el envio de datos muy probablemente encontremos una inconsistencia. El desarrollador
- * 	debe tener en cuenta todos estos atenuantes y pensar su solucion de tal forma que sea lo mas portable posible (al fin y al cabo,
- * 	para eso queremos comunicarnos por red, ¿no?). Investigar tambien, el caso de la serializacion en C de datos con punto flotante.
+ * 	De la misma forma que no existe una sola forma de serializar las estructuras, tampoco de serializarlas. En este caso, realizaremos una deserializacion
+ * 	a medida que vamos recibiendo el paquete.
+ * 	Para esto es necesario conocer lo siguiente: Si el emisor nos envia un paquete con "ABCDE" y uno lee 2 caracteres, en el buffer interno del sistema quedara
+ * 	"CDE" para leer. Por lo tanto, la proxima vez que leamos un caracter, obtendremos "C".
  *
- * 	Por suerte, mucha gente antes que nosotros se encontro con este problema, y desarrollaron una serie de estandares para que todos
- * 	podamos desarrollar de una forma feliz y eficiente. Funciones como htons(), nos permiten convertir ciertos tipos de datos a un estandar.
+ * 	Aprovechamos eso para modelar la siguiente solucion: Recibiremos la cantidad de caracteres a leer previo a los caracteres, por lo tanto, sabremos cuanto es
+ * 	el largo de cada uno de los strings que nos enviaron.
+ * 	¿Por que no nos enviaron un MAX_SIZE? Porque nos conectamos en red, y no esta bueno leer, por ejemplo, 300 caracteres, para solamente utilizar 15.
  *
- * 	Recapitulando, deserializar significa tomar el stream de datos recibidos y obtener los datos que alli se encuentran, de tal forma
- * 	que podamos operar con ellos.
  */
-void deserializarOperandos(t_Package *operandos, char **package){
+int recieve_and_deserialize(t_Package *package, int socketCliente){
 
-	int offset = 0;
+	int status;
+	int buffer_size;
+	char *buffer = malloc(buffer_size = sizeof(uint32_t));
 
-	memcpy(&operandos->Operando1, *package, sizeof(operandos->Operando1));
+	uint32_t username_long;
+	status = recv(socketCliente, buffer, sizeof(package->username_long), 0);
+	memcpy(&(username_long), buffer, buffer_size);
+	if (!status) return 0;
 
-	offset = sizeof(operandos->Operando1);
+	status = recv(socketCliente, package->username, username_long, 0);
+	if (!status) return 0;
 
-	memcpy(&operandos->Operando2, *package + offset, sizeof(operandos->Operando2));
+	uint32_t message_long;
+	status = recv(socketCliente, buffer, sizeof(package->message_long), 0);
+	memcpy(&(message_long), buffer, buffer_size);
+	if (!status) return 0;
+
+	status = recv(socketCliente, package->message, message_long, 0);
+	if (!status) return 0;
+
+
+	free(buffer);
+
+	return status;
 }
+

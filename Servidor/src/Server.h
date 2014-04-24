@@ -20,6 +20,9 @@
 
 #define PUERTO "6667"
 #define BACKLOG 5			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
+#define MAX_PACKAGE_SIZE 1024	//El servidor no admitira paquetes de mas de 1024 bytes
+#define MAXUSERNAME 30
+#define MAX_MESSAGE_SIZE 300
 
 /*
  * 	Definicion de estructuras
@@ -28,14 +31,16 @@
  * 	de bytes del paquete.
  */
 typedef struct _t_Package {
-	uint32_t Operando1;
-	uint32_t Operando2;
+	char username[MAXUSERNAME];
+	uint32_t username_long;
+	char message[MAX_MESSAGE_SIZE];
+	uint32_t message_long;
 } t_Package;
 
 /*
  * 	Definicion de funciones
  */
 
-void deserializarOperandos(t_Package* , char**);
+int recieve_and_deserialize(t_Package *,int);
 
 #endif /* SERVER_H_ */

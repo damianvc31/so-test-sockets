@@ -1,7 +1,7 @@
 /*
  * 	Modelo ejemplo de un Cliente que envia mensajes a un Server.
  *
- * 	Cada mensaje estara compuesto por 2 numeros que seran sumados en el servidor.
+ * 	Al iniciar, el cliente ingresara su nombre de usuario. Luego, podra enviar mensajes al servidor.
  *
  * 	No se contemplan el manejo de errores en el sistema por una cuestion didactica. Tener en cuenta esto al desarrollar.
  */
@@ -10,6 +10,12 @@
 
 
 int main(){
+	/*
+	 * 	Obtendo el username, que despues utilizare para "identificarme" con el server (lo envio en el paquete).
+	 */
+	char *username = malloc(MAXUSERNAME);
+	get_Username(&username);
+
 	/*
 	 *  ¿Quien soy? ¿Donde estoy? ¿Existo?
 	 *
@@ -51,27 +57,26 @@ int main(){
 	 *
 	 *	Enviar datos!
 	 *
-	 *	Vamos a crear un paquete con 2 numeros que seran enviados al servidor.
+	 *	Debemos obtener el mensaje que el usuario quiere mandar al chat, y luego serializarlo.
 	 *
-	 *	Aprovechando el standard imput/output, guardamos los valores que ingresa el usuario en la consola, los mandamos a serializar,
-	 *	generando el paquete, y, por ultimo, enviamos.
-	 *
-	 *	Si ambos operandos son 0, salimos del ciclo.
+	 *	Si el mensaje es "exit", saldremos del sistema.
 	 *
 	 */
 	int enviar = 1;
-	t_Package operandos;
-	/* Necesitamos asegurarnos de enviar un stream de caracteres contiguo. Por ello, reservamos el espacio. */
-	int packageSize = sizeof(operandos.Operando1) + sizeof(operandos.Operando2);
-	char *message = malloc(packageSize);
+	t_Package package;
+	package.message = malloc(MAX_MESSAGE_SIZE);
+	char *serializedPackage;
 
 	while(enviar){
-		scanf("%d", &(operandos.Operando1));
-		scanf("%d", &(operandos.Operando2));
-		if((operandos.Operando1 == 0) && (operandos.Operando2 == 0)) enviar = 0;		// Chequea si el usuario quiere salir.
+
+		fill_package(&package, &username);						// Completamos el package, que contendra los datos del usuario y los datos del mensaje que vamos a enviar.
+
+		if(!strcmp(package.message, "exit")) enviar = 1;		// Chequeamos si el usuario quiere salir.
+
 		if(enviar) {
-			serializarOperandos(operandos, &message);	// Ver: ¿Por que serializar? En el comentario de la definicion de la funcion.
-			send(serverSocket, message, packageSize, 0);
+			serializedPackage = serializarOperandos(&package);	// Ver: ¿Por que serializacion dinamica? En el comentario de la definicion de la funcion.
+			send(serverSocket, serializedPackage, package.total_size, 0);
+			dispose_package(&serializedPackage);
 		}
 	}
 
@@ -79,8 +84,8 @@ int main(){
 	 *
 	 *  Acordate que por cada free() que no hacemos, valgrind mata a un gatito.
 	 */
-	free(message);
-
+	free(package.message);
+	free(username);
 
 	/*
 	 *	Listo! Cree un medio de comunicacion con el servidor, me conecte con y le envie cosas...
@@ -99,24 +104,87 @@ int main(){
 
 
 /*
- * 	¿Por que serializar?
+ * 	¿Por que serializacion dinamica?
+ * 	(Leer previamente ¿Por que serializacion? en el branch StaticSerialization.
  *
- * 	Como ya sabemos, para enviar datos por sockets, debemos enviar un stream de datos. Esto significa que, independientemente de la
- * 	estructura que estemos intentando enviar, los datos deben enviarse de forma contigua y de una forma tal que el destinatario pueda
- * 	identificar inequivocamente lo que le enviemos. Para ello, necesitamos utilizar un formato que hayamos acordado previamente con el receptor.
- * 	Ademas, nosotros tenemos que tener en cuenta que nuestro programa en tiempo de ejecucion puede ubicar las distintas partes de
- * 	una estructura de forma distribuida en la memoria disponible. Esto, basicmente, significa que LOS DATOS PUEDEN NO ESTAR CONTIGUOS.
+ * 	Como vimos antes, le tenemos que mandar un mensaje al receptor que contiene algunos valores. El receptor, por su parte, lo analizara y dividira en partes
+ * 	para luego poder operar con ellos. Pero... ¿Que pasa si la cantidad de datos (o su largo) es variable?
+ * 	Si le mandamos los datos sin importar, el tipo no sabria decir cuantos datos buscar o que tan grandes son los datos que le pasamos. Por ende, no los podria
+ * 	identificar, entoooonces... PUM! Rompe.
  *
- * 	Para solucionar esto, los datos se serializan. Serializar significa ubicar los datos a enviar de una forma inequivoca y contigua en un
- * 	cierto espacio de memoria de tal forma que el receptor pueda reconstruir la estructura en su propio espacio de memoria.
+ * 	Para solucionar esto, surge el concepto de serializacion dinamica (se lo imaginaban, ¿no?). Esto consiste en encontrar una forma de comunicarle al receptor
+ * 	cuantos o de que size sera cada uno de los valores que le pasamos.
+ * 	De la misma forma que no hay solo una tecnica para serializar estaticamente, tampoco hay una sola forma de serializar dinamicamente. Cada problema puede
+ * 	encontrar distintas soluciones, y no existe una forma universal de delimitar datos. Pero, en funcion de nuestro problema (enviar un nombre de usuario y
+ * 	un mensaje), veamos algunas:
+ *
+ * 	La solucion utilizada consiste en obtener el length de tanto el nombre de usuario como el mensaje. Unimos estos dos valores al paquete inicial (asegurandonos
+ * 	de enviar primero el largo de cada string y luego el string) y de esta forma el receptor podra saber cuantos caracteres debe esperar (o leer) y asi poder
+ * 	generar datos con los que pueda operar.
+ * 	Otra solucion bastante inteligente, que se encuentra implementada en el Parser del TP del 1C-2014: EstaCover Flow, es la separacion de las cadenas de string
+ * 	mediante un caracter centinela. Cualquier estudiante aplicado de SSL sabra que el \0 es el caracter centinela por excelencia, y eso no escapa al Parser.
+ *
+ * 	Entonces... Veamos un poco mas de codigo:
+ *
  */
-void serializarOperandos(t_Package operandos, char** message){
+char* serializarOperandos(t_Package *package){
 
-	int offset=0;
+	char *serializedPackage = malloc(package->total_size);
 
-	memcpy(*message, &(operandos.Operando1), sizeof(operandos.Operando1));
+	int offset = 0;
+	int size_to_send;
 
-	offset = sizeof(operandos.Operando1); 		// Ya ubicamos la primera parte, ahora debemos corrernos para no sobreescribir.
+	size_to_send =  sizeof(package->username_long);
+	memcpy(serializedPackage + offset, &(package->username_long), size_to_send);
+	offset += size_to_send;
 
-	memcpy(*message + offset, &((operandos).Operando2), sizeof(operandos.Operando2));
+	size_to_send =  package->username_long;
+	memcpy(serializedPackage + offset, package->username, size_to_send);
+	offset += size_to_send;
+
+	size_to_send =  sizeof(package->message_long);
+	memcpy(serializedPackage + offset, &(package->message_long), size_to_send);
+	offset += size_to_send;
+
+	size_to_send =  package->message_long;
+	memcpy(serializedPackage + offset, package->message, size_to_send);
+
+	return serializedPackage;
+}
+
+
+/*
+ * 	Funciones auxiliares
+ */
+
+void get_Username(char **username){
+
+	printf("Ingrese su nombre de usuario: ");
+
+	fgets(*username, MAXUSERNAME, stdin);
+
+	/* Como fgets incluye el \n al final del username, nosotros se lo sacamos: */
+	int username_long = strlen(*username);
+	(*username)[username_long-1] = '\0';
+
+	printf("Bienvenido al sistema, puede comenzar a escribir.\n");
+
+}
+
+void fill_package(t_Package *package, char** username){
+	/* Me guardo los datos del usuario y el mensaje que manda */
+	package->username = *username;
+	package->username_long = strlen(*username) + 1; 		// Me guardo lugar para el \0
+
+	fgets(package->message, MAX_MESSAGE_SIZE, stdin);
+	(package->message)[strlen(package->message)] = '\0';
+
+	package->message_long = strlen(package->message) + 1;	// Me guardo lugar para el \0
+
+	package->total_size = sizeof(package->username_long) + package->username_long + sizeof(package->message_long) + package->message_long;
+	// Si, este ultimo valor es calculable. Pero a fines didacticos la calculo aca y la guardo a futuro, ya que no se modificara en otro lado.
+}
+
+void dispose_package(char **package){
+	free(*package);
 }

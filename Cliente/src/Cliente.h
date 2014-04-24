@@ -19,22 +19,31 @@
 
 #define IP "127.0.0.1"
 #define PUERTO "6667"
+#define MAXUSERNAME 30
+#define MAX_MESSAGE_SIZE 300
 
 /*
  * 	Definicion de estructuras
  *
  * 	Es importante destacar que utilizamos el tipo uint_32, incluida en el header <stdint.h> para mantener un estandar en la cantidad
  * 	de bytes del paquete.
+ *
  */
 typedef struct _t_Package {
-	uint32_t Operando1;
-	uint32_t Operando2;
+	char* username;
+	uint32_t username_long;
+	char* message;
+	uint32_t message_long;
+	uint32_t total_size;			// NOTA: Es calculable. Aca lo tenemos por fines didacticos!
 } t_Package;
 
 /*
  * 	Definicion de funciones
  */
 
-void serializarOperandos(t_Package, char**);
+char* serializarOperandos(t_Package*);
+void get_Username(char**);
+void fill_package(t_Package*, char**);
+void dispose_package(char**);
 
 #endif /* CLIENTE_H_ */

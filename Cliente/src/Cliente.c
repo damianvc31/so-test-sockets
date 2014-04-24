@@ -1,23 +1,15 @@
 /*
- * Modelo ejemplo de un Cliente que envia mensajes a un Server.
+ * 	Modelo ejemplo de un Cliente que envia mensajes a un Server.
+ *
+ * 	Cada mensaje estara compuesto por 2 numeros que seran sumados en el servidor.
  *
  * 	No se contemplan el manejo de errores en el sistema por una cuestion didactica. Tener en cuenta esto al desarrollar.
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <unistd.h>
+#include "Cliente.h"
 
-#define IP "127.0.0.1"
-#define PUERTO "6667"
-#define PACKAGESIZE 1024	// Define cual va a ser el size maximo del paquete a enviar
 
 int main(){
-
 	/*
 	 *  ¿Quien soy? ¿Donde estoy? ¿Existo?
 	 *
@@ -59,20 +51,35 @@ int main(){
 	 *
 	 *	Enviar datos!
 	 *
-	 *	Vamos a crear un paquete (en este caso solo un conjunto de caracteres) de size PACKAGESIZE, que le enviare al servidor.
+	 *	Vamos a crear un paquete con 2 numeros que seran enviados al servidor.
 	 *
-	 *	Aprovechando el standard immput/output, guardamos en el paquete las cosas que ingrese el usuario en la consola.
-	 *	Ademas, contamos con la verificacion de que el usuario escriba "exit" para dejar de transmitir.
+	 *	Aprovechando el standard imput/output, guardamos los valores que ingresa el usuario en la consola, los mandamos a serializar,
+	 *	generando el paquete, y, por ultimo, enviamos.
+	 *
+	 *	Si ambos operandos son 0, salimos del ciclo.
 	 *
 	 */
 	int enviar = 1;
-	char message[PACKAGESIZE];
+	t_Package operandos;
+	/* Necesitamos asegurarnos de enviar un stream de caracteres contiguo. Por ello, reservamos el espacio. */
+	int packageSize = sizeof(operandos.Operando1) + sizeof(operandos.Operando2);
+	char *message = malloc(packageSize);
 
 	while(enviar){
-		fgets(message, PACKAGESIZE, stdin);			// Lee una linea en el stdin (lo que escribimos en la consola) hasta encontrar un \n (y lo incluye) o llegar a PACKAGESIZE.
-		if (!strcmp(message,"exit")) enviar = 0;			// Chequeo que el usuario no quiera salir
-		if (enviar) send(serverSocket, message, strlen(message) + 1, 0); 	// Solo envio si el usuario no quiere salir.
+		scanf("%d", &(operandos.Operando1));
+		scanf("%d", &(operandos.Operando2));
+		if((operandos.Operando1 == 0) && (operandos.Operando2 == 0)) enviar = 0;		// Chequea si el usuario quiere salir.
+		if(enviar) {
+			serializarOperandos(operandos, &message);	// Ver: ¿Por que serializar? En el comentario de la definicion de la funcion.
+			send(serverSocket, message, packageSize, 0);
+		}
 	}
+
+	/*	NUNCA nos olvidamos de liberar la memoria que pedimos.
+	 *
+	 *  Acordate que por cada free() que no hacemos, valgrind mata a un gatito.
+	 */
+	free(message);
 
 
 	/*
@@ -84,7 +91,32 @@ int main(){
 	 */
 
 	close(serverSocket);
-	return 0;
 
 	/* ADIO'! */
+	return 0;
+
+}
+
+
+/*
+ * 	¿Por que serializar?
+ *
+ * 	Como ya sabemos, para enviar datos por sockets, debemos enviar un stream de datos. Esto significa que, independientemente de la
+ * 	estructura que estemos intentando enviar, los datos deben enviarse de forma contigua y de una forma tal que el destinatario pueda
+ * 	identificar inequivocamente lo que le enviemos. Para ello, necesitamos utilizar un formato que hayamos acordado previamente con el receptor.
+ * 	Ademas, nosotros tenemos que tener en cuenta que nuestro programa en tiempo de ejecucion puede ubicar las distintas partes de
+ * 	una estructura de forma distribuida en la memoria disponible. Esto, basicmente, significa que LOS DATOS PUEDEN NO ESTAR CONTIGUOS.
+ *
+ * 	Para solucionar esto, los datos se serializan. Serializar significa ubicar los datos a enviar de una forma inequivoca y contigua en un
+ * 	cierto espacio de memoria de tal forma que el receptor pueda reconstruir la estructura en su propio espacio de memoria.
+ */
+void serializarOperandos(t_Package operandos, char** message){
+
+	int offset=0;
+
+	memcpy(*message, &(operandos.Operando1), sizeof(operandos.Operando1));
+
+	offset = sizeof(operandos.Operando1); 		// Ya ubicamos la primera parte, ahora debemos corrernos para no sobreescribir.
+
+	memcpy(*message + offset, &((operandos).Operando2), sizeof(operandos.Operando2));
 }

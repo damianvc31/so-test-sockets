@@ -3,18 +3,7 @@
  * Al recibir un mensaje, lo imprimira por pantalla.
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <unistd.h>
-
-
-#define PUERTO "6667"
-#define BACKLOG 5			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
-#define PACKAGESIZE 1024	// Define cual va a ser el size maximo del paquete a enviar
+#include "Server.h"
 
 int main(){
 
@@ -93,18 +82,30 @@ int main(){
 	/*
 	 * 	Ya estamos listos para recibir paquetes de nuestro cliente...
 	 *
-	 * 	Vamos a ESPERAR (ergo, funcion bloqueante) que nos manden los paquetes, y los imprimieremos por pantalla.
+	 * 	Vamos a ESPERAR (ergo, funcion bloqueante) que nos manden los paquetes, y luego imprimiremos la suma de los operandos por pantalla.
 	 *
 	 *	Cuando el cliente cierra la conexion, recv() devolvera 0.
 	 */
-	char package[PACKAGESIZE];
+	t_Package operandos;
+	int packageSize = sizeof(operandos.Operando1) + sizeof(operandos.Operando2);
+	char *package = malloc(packageSize);
+	uint32_t suma;
+
 	int status = 1;		// Estructura que manjea el status de los recieve.
 
 	while (status != 0){
-		status = recv(socketCliente, (void*) package, PACKAGESIZE, 0);
-		if (status != 0) printf("%s", package);
+		status = recv(socketCliente, (void*) package, packageSize, 0);
+		deserializarOperandos(&(operandos), &(package));		// Ver: ¿Por que deserializar? En el comentario de la definicion de la funcion.
+		suma = operandos.Operando1 + operandos.Operando2;
+		if (status != 0) printf("%d\n", suma);
 
 	}
+
+	/*	NUNCA nos olvidamos de liberar la memoria que pedimos.
+	 *
+	 *  Acordate que por cada free() que no hacemos, valgrind mata a un gatito.
+	 */
+	free(package);
 
 	/*
 	 * 	Terminado el intercambio de paquetes, cerramos todas las conexiones y nos vamos a mirar Game of Thrones, que seguro nos vamos a divertir mas...
@@ -119,4 +120,33 @@ int main(){
 	/* See ya! */
 
 	return 0;
+}
+
+
+/*
+ * 	¿Por que deserializar?
+ * 	(leer primero: ¿Por que serializar? en el proceso cliente)
+ *
+ * 	De forma inversa a la serializacion, los datos deben ser reconstruidos en el receptor, para que este pueda trabajar con ellos.
+ * 	Cabe destacar que no necesariamente el formato de los datos enviados es el mismo en el emisor que en el receptor. Por ejemplo,
+ * 	el caso mas representativo es la diferencia en el tipo de almacenamiento de datos en memoria que estos usen. Si uno utiliza
+ * 	Big Endian, y otro Little Endian, al realizar el envio de datos muy probablemente encontremos una inconsistencia. El desarrollador
+ * 	debe tener en cuenta todos estos atenuantes y pensar su solucion de tal forma que sea lo mas portable posible (al fin y al cabo,
+ * 	para eso queremos comunicarnos por red, ¿no?). Investigar tambien, el caso de la serializacion en C de datos con punto flotante.
+ *
+ * 	Por suerte, mucha gente antes que nosotros se encontro con este problema, y desarrollaron una serie de estandares para que todos
+ * 	podamos desarrollar de una forma feliz y eficiente. Funciones como htons(), nos permiten convertir ciertos tipos de datos a un estandar.
+ *
+ * 	Recapitulando, deserializar significa tomar el stream de datos recibidos y obtener los datos que alli se encuentran, de tal forma
+ * 	que podamos operar con ellos.
+ */
+void deserializarOperandos(t_Package *operandos, char **package){
+
+	int offset = 0;
+
+	memcpy(&operandos->Operando1, *package, sizeof(operandos->Operando1));
+
+	offset = sizeof(operandos->Operando1);
+
+	memcpy(&operandos->Operando2, *package + offset, sizeof(operandos->Operando2));
 }

@@ -52,6 +52,7 @@ int main(){
 	connect(serverSocket, serverInfo->ai_addr, serverInfo->ai_addrlen);
 	freeaddrinfo(serverInfo);	// No lo necesitamos mas
 
+	printf("Conectado al servidor.\n");
 	/*
 	 *	Estoy conectado! Ya solo me queda una cosa:
 	 *
@@ -67,6 +68,9 @@ int main(){
 	package.message = malloc(MAX_MESSAGE_SIZE);
 	char *serializedPackage;
 
+
+	printf("Bienvenido al sistema, puede comenzar a escribir. Escriba 'exit' para salir.\n");
+
 	while(enviar){
 
 		fill_package(&package, &username);						// Completamos el package, que contendra los datos del usuario y los datos del mensaje que vamos a enviar.
@@ -79,6 +83,8 @@ int main(){
 			dispose_package(&serializedPackage);
 		}
 	}
+
+	printf("Desconectado.\n");
 
 	/*	NUNCA nos olvidamos de liberar la memoria que pedimos.
 	 *
@@ -167,7 +173,6 @@ void get_Username(char **username){
 	int username_long = strlen(*username);
 	(*username)[username_long-1] = '\0';
 
-	printf("Bienvenido al sistema, puede comenzar a escribir.\n");
 
 }
 

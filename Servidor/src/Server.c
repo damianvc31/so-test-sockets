@@ -89,12 +89,15 @@ int main(){
 	t_Package package;
 	int status = 1;		// Estructura que manjea el status de los recieve.
 
+	printf("Cliente conectado. Esperando Envío de mensajes.\n");
+
 	while (status){
 		status = recieve_and_deserialize(&package, socketCliente);					// Ver el "Deserializando estructuras dinamicas" en el comentario de la funcion.
 		if (status) printf("%s says: %s", package.username, package.message);
 	}
 
 
+	printf("Cliente Desconectado.\n");
 	/*
 	 * 	Terminado el intercambio de paquetes, cerramos todas las conexiones y nos vamos a mirar Game of Thrones, que seguro nos vamos a divertir mas...
 	 *

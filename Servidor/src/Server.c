@@ -93,13 +93,18 @@ int main(){
 
 	int status = 1;		// Estructura que manjea el status de los recieve.
 
+	printf("Cliente Conectado. ");
+
 	while (status != 0){
+		printf("Esperando valores...\n");
 		status = recv(socketCliente, (void*) package, packageSize, 0);
 		deserializarOperandos(&(operandos), &(package));		// Ver: ¿Por que deserializar? En el comentario de la definicion de la funcion.
 		suma = operandos.Operando1 + operandos.Operando2;
-		if (status != 0) printf("%d\n", suma);
+		if (status != 0) printf("La suma es %d\n", suma);
 
 	}
+
+	printf("Cliente Desconectado.\n");
 
 	/*	NUNCA nos olvidamos de liberar la memoria que pedimos.
 	 *

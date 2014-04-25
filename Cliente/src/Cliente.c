@@ -65,7 +65,9 @@ int main(){
 	int packageSize = sizeof(operandos.Operando1) + sizeof(operandos.Operando2);
 	char *message = malloc(packageSize);
 
+
 	while(enviar){
+		printf("Conectado al servidor. Ingrese dos numeros, para salir, ambos operandos deben ser 0:\n");
 		scanf("%d", &(operandos.Operando1));
 		scanf("%d", &(operandos.Operando2));
 		if((operandos.Operando1 == 0) && (operandos.Operando2 == 0)) enviar = 0;		// Chequea si el usuario quiere salir.
@@ -75,6 +77,7 @@ int main(){
 		}
 	}
 
+	printf("Desconectado\n");
 	/*	NUNCA nos olvidamos de liberar la memoria que pedimos.
 	 *
 	 *  Acordate que por cada free() que no hacemos, valgrind mata a un gatito.

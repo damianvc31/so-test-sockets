@@ -75,7 +75,7 @@ int main(){
 
 		fill_package(&package, &username);						// Completamos el package, que contendra los datos del usuario y los datos del mensaje que vamos a enviar.
 
-		if(!strcmp(package.message, "exit")) enviar = 1;		// Chequeamos si el usuario quiere salir.
+		if(!strcmp(package.message, "exit\n")) enviar = 0;		// Chequeamos si el usuario quiere salir.
 
 		if(enviar) {
 			serializedPackage = serializarOperandos(&package);	// Ver: ¿Por que serializacion dinamica? En el comentario de la definicion de la funcion.

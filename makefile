@@ -11,7 +11,7 @@ all:
 clean:
 	rm -rf bin
 
-cliente:
+client:
 	mkdir -p $(BIN_PATH)
 	$(COMPILER) Cliente/src/Cliente.h Cliente/src/Cliente.c -o $(BIN_PATH)/Cliente
 
@@ -22,8 +22,8 @@ server:
 
 # Contemplamos algunos Alias para subsanar posibles diferencias de escritura
 
-client:
-	make cliente
+cliente:
+	make client
 
 servidor:
 	make server

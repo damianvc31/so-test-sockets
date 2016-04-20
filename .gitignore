@@ -1,2 +1,11 @@
 #Ignoramos la carpeta en la que se crean los binarios.
 bin/
+
+#### Elementos que seran ignorados por git y no se subiran al repo ####
+
+#Archivos generables por Eclipse
+.cproject
+.project
+
+#Carpeta de debug
+Debug/

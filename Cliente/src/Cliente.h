@@ -42,8 +42,8 @@ typedef struct _t_Package {
  */
 
 char* serializarOperandos(t_Package*);
-void get_Username(char**);
-void fill_package(t_Package*, char**);
-void dispose_package(char**);
+void get_Username(char*);
+void fill_package(t_Package*, char*);
+void dispose_package(char*);
 
 #endif /* CLIENTE_H_ */

@@ -14,7 +14,7 @@ int main(){
 	 * 	Obtendo el username, que despues utilizare para "identificarme" con el server (lo envio en el paquete).
 	 */
 	char *username = malloc(MAXUSERNAME);
-	get_Username(&username);
+	get_Username(username);
 
 	/*
 	 *  ¿Quien soy? ¿Donde estoy? ¿Existo?
@@ -73,14 +73,14 @@ int main(){
 
 	while(enviar){
 
-		fill_package(&package, &username);						// Completamos el package, que contendra los datos del usuario y los datos del mensaje que vamos a enviar.
+		fill_package(&package, username);						// Completamos el package, que contendra los datos del usuario y los datos del mensaje que vamos a enviar.
 
 		if(!strcmp(package.message, "exit\n")) enviar = 0;		// Chequeamos si el usuario quiere salir.
 
 		if(enviar) {
 			serializedPackage = serializarOperandos(&package);	// Ver: ¿Por que serializacion dinamica? En el comentario de la definicion de la funcion.
 			send(serverSocket, serializedPackage, package.total_size, 0);
-			dispose_package(&serializedPackage);
+			dispose_package(serializedPackage);
 		}
 	}
 
@@ -163,26 +163,26 @@ char* serializarOperandos(t_Package *package){
  * 	Funciones auxiliares
  */
 
-void get_Username(char **username){
+void get_Username(char *username){
 
 	printf("Ingrese su nombre de usuario: ");
 
-	fgets(*username, MAXUSERNAME, stdin);
+	fgets(username, MAXUSERNAME, stdin);
 
 	/* Como fgets incluye el \n al final del username, nosotros se lo sacamos: */
-	int username_long = strlen(*username);
-	(*username)[username_long-1] = '\0';
+	int username_long = strlen(username);
+	username[username_long-1] = '\0';
 
 
 }
 
-void fill_package(t_Package *package, char** username){
+void fill_package(t_Package *package, char* username){
 	/* Me guardo los datos del usuario y el mensaje que manda */
-	package->username = *username;
-	package->username_long = strlen(*username) + 1; 		// Me guardo lugar para el \0
+	package->username = username;
+	package->username_long = strlen(username) + 1; 		// Me guardo lugar para el \0
 
 	fgets(package->message, MAX_MESSAGE_SIZE, stdin);
-	(package->message)[strlen(package->message)] = '\0';
+	//(package->message)[strlen(package->message)] = '\0'; esa linea no hace nada
 
 	package->message_long = strlen(package->message) + 1;	// Me guardo lugar para el \0
 
@@ -190,6 +190,6 @@ void fill_package(t_Package *package, char** username){
 	// Si, este ultimo valor es calculable. Pero a fines didacticos la calculo aca y la guardo a futuro, ya que no se modificara en otro lado.
 }
 
-void dispose_package(char **package){
-	free(*package);
+void dispose_package(char *package){
+	free(package);
 }

@@ -35,6 +35,6 @@ typedef struct _t_Package {
  * 	Definicion de funciones
  */
 
-void serializarOperandos(t_Package, char**);
+void serializarOperandos(t_Package, char*);
 
 #endif /* CLIENTE_H_ */

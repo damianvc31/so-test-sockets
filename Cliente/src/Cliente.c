@@ -72,7 +72,7 @@ int main(){
 		scanf("%d", &(operandos.Operando2));
 		if((operandos.Operando1 == 0) && (operandos.Operando2 == 0)) enviar = 0;		// Chequea si el usuario quiere salir.
 		if(enviar) {
-			serializarOperandos(operandos, &message);	// Ver: ¿Por que serializar? En el comentario de la definicion de la funcion.
+			serializarOperandos(operandos, message);	// Ver: ¿Por que serializar? En el comentario de la definicion de la funcion.
 			send(serverSocket, message, packageSize, 0);
 		}
 	}
@@ -113,13 +113,13 @@ int main(){
  * 	Para solucionar esto, los datos se serializan. Serializar significa ubicar los datos a enviar de una forma inequivoca y contigua en un
  * 	cierto espacio de memoria de tal forma que el receptor pueda reconstruir la estructura en su propio espacio de memoria.
  */
-void serializarOperandos(t_Package operandos, char** message){
+void serializarOperandos(t_Package operandos, char* message){
 
 	int offset=0;
 
-	memcpy(*message, &(operandos.Operando1), sizeof(operandos.Operando1));
+	memcpy(message, &(operandos.Operando1), sizeof(operandos.Operando1));
 
 	offset = sizeof(operandos.Operando1); 		// Ya ubicamos la primera parte, ahora debemos corrernos para no sobreescribir.
 
-	memcpy(*message + offset, &(operandos.Operando2), sizeof(operandos.Operando2));
+	memcpy(message + offset, &(operandos.Operando2), sizeof(operandos.Operando2));
 }

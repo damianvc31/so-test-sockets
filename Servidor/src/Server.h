@@ -36,6 +36,6 @@ typedef struct _t_Package {
  * 	Definicion de funciones
  */
 
-void deserializarOperandos(t_Package* , char**);
+void deserializarOperandos(t_Package* , char*);
 
 #endif /* SERVER_H_ */

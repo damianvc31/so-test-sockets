@@ -101,7 +101,7 @@ int main(){
 	while (status != 0){
 		printf("Esperando valores...\n");
 		status = recv(socketCliente, (void*) package, packageSize, 0);
-		deserializarOperandos(&(operandos), &(package));		// Ver: ¿Por que deserializar? En el comentario de la definicion de la funcion.
+		deserializarOperandos(&operandos, package);		// Ver: ¿Por que deserializar? En el comentario de la definicion de la funcion.
 		suma = operandos.Operando1 + operandos.Operando2;
 		if (status != 0) printf("La suma es %d\n", suma);
 
@@ -148,13 +148,13 @@ int main(){
  * 	Recapitulando, deserializar significa tomar el stream de datos recibidos y obtener los datos que alli se encuentran, de tal forma
  * 	que podamos operar con ellos.
  */
-void deserializarOperandos(t_Package *operandos, char **package){
+void deserializarOperandos(t_Package *operandos, char *package){
 
 	int offset = 0;
 
-	memcpy(&operandos->Operando1, *package, sizeof(operandos->Operando1));
+	memcpy(&operandos->Operando1, package, sizeof(operandos->Operando1));
 
 	offset = sizeof(operandos->Operando1);
 
-	memcpy(&operandos->Operando2, *package + offset, sizeof(operandos->Operando2));
+	memcpy(&operandos->Operando2, package + offset, sizeof(operandos->Operando2));
 }

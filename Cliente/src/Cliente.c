@@ -121,5 +121,5 @@ void serializarOperandos(t_Package operandos, char** message){
 
 	offset = sizeof(operandos.Operando1); 		// Ya ubicamos la primera parte, ahora debemos corrernos para no sobreescribir.
 
-	memcpy(*message + offset, &((operandos).Operando2), sizeof(operandos.Operando2));
+	memcpy(*message + offset, &(operandos.Operando2), sizeof(operandos.Operando2));
 }

@@ -89,6 +89,9 @@ int main(){
 	t_Package operandos;
 	int packageSize = sizeof(operandos.Operando1) + sizeof(operandos.Operando2);
 	char *package = malloc(packageSize);
+
+	printf("Tamaño del paquete: %d\n", packageSize);
+
 	uint32_t suma;
 
 	int status = 1;		// Estructura que manjea el status de los recieve.

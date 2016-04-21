@@ -88,6 +88,8 @@ int main(){
 	struct sockaddr_in addr;			// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
 	socklen_t addrlen = sizeof(addr);
 
+	printf("Esperando conexiones en %d\n",listenningSocket);
+
 	int socketCliente = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
 
 	/*
@@ -101,6 +103,7 @@ int main(){
 	int status = 1;		// Estructura que manjea el status de los recieve.
 
 	printf("Cliente conectado. Esperando mensajes:\n");
+	printf("Numero del cliente: %d\n",socketCliente);
 
 	while (status != 0){
 		status = recv(socketCliente, (void*) package, PACKAGESIZE, 0);

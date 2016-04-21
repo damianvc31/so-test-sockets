@@ -51,7 +51,12 @@ int main(){
 	 * 	Ahora me conecto!
 	 *
 	 */
-	connect(serverSocket, serverInfo->ai_addr, serverInfo->ai_addrlen);
+	if(connect(serverSocket, serverInfo->ai_addr, serverInfo->ai_addrlen)){
+		perror("Se rompió todo");
+		exit(1);
+	}
+
+
 	freeaddrinfo(serverInfo);	// No lo necesitamos mas
 
 	/*
@@ -69,6 +74,7 @@ int main(){
 	char message[PACKAGESIZE];
 
 	printf("Conectado al servidor. Bienvenido al sistema, ya puede enviar mensajes. Escriba 'exit' para salir\n");
+	printf("Su numero de socket es: %d\n",serverSocket);
 
 	while(enviar){
 		fgets(message, PACKAGESIZE, stdin);			// Lee una linea en el stdin (lo que escribimos en la consola) hasta encontrar un \n (y lo incluye) o llegar a PACKAGESIZE.
